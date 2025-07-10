@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  name: { type: String },
+  name: String,
   email: { type: String, unique: true },
-  password: { type: String },
+  password: String,
   role: {
     type: String,
     enum: ['seeker', 'poster', 'admin'],
@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     cleanlinessLevel: Number,
   },
   isVerified: { type: Boolean, default: false },
-  aadharCardUrl: { type: String }, // optional
-});
+  aadharCardUrl: String,
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
