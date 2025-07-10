@@ -58,3 +58,4 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ message: 'Error fetching profile' });
   }
 };
+//hello my name is John Doe and I am a software engineer with a passion for building scalable web applications. I have experience
