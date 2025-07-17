@@ -1,4 +1,36 @@
-# Ignore all .env files
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm/
+
+# dotenv environment variables
 .env
 .env.*
-!.env.example  # exception for template
+!.env.example  # keep the example file for reference
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+
+# Coverage
+coverage/
+
+# IDE/Editor folders
+.vscode/
+.idea/
+
+# Local server files
+*.local
