@@ -15,8 +15,7 @@ const reviewSchema = new mongoose.Schema({
   },
   post: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
-    required: false
+    ref: 'Post'
   },
   rating: {
     type: Number,
@@ -28,13 +27,14 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     maxlength: 1000
   },
+  isAnonymous: { type: Boolean, default: false },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
 
-// One reviewer can review one reviewee only once per post (optional constraint)
+// One reviewer can review one reviewee per post
 reviewSchema.index({ reviewer: 1, reviewee: 1, post: 1 }, { unique: true });
 
 module.exports = mongoose.model('Review', reviewSchema);

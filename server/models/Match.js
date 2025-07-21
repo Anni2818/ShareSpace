@@ -18,10 +18,8 @@ const matchSchema = new mongoose.Schema({
     enum: ['liked', 'matched', 'rejected'],
     default: 'liked'
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  updatedAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }
 });
 
 // Ensure a seeker can match a post only once

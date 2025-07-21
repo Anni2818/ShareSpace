@@ -1,51 +1,38 @@
-// require('dotenv').config();
-// const express = require('express');
-// const cors = require('cors');
-// const connectDB = require('./config/db');
-
-// const app = express();
-// connectDB();
-
-// // Middleware
-// app.use(cors());
-// app.use(express.json());
-
-// // Routes
-// app.use('/api/auth', require('./routes/authRoutes'));
-
-// // Server
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
+const http = require('http');
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 const connectDB = require('./config/db');
-require('./config/passport'); // Initialize Google OAuth config
+const User = require('./models/User');
+
+require('./config/passport'); // Google OAuth setup
 
 const app = express();
 connectDB();
 
-// Middleware
-app.use(cors());
+// Express Middleware
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true,
+}));
 app.use(express.json());
 
-// Session middleware for passport (required for OAuth)
+// Session middleware (needed for passport OAuth)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecretkey',
   resave: false,
   saveUninitialized: false,
 }));
 
-// Initialize passport
+// Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Auth routes (JWT based auth, forgot password, etc.)
+// Express Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 
 // Google OAuth Routes
@@ -56,16 +43,62 @@ app.get('/auth/google',
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    // Redirect to frontend with token
     res.redirect(`${process.env.CLIENT_URL}/oauth-success?token=${token}`);
   }
 );
 
-// Server
+// --------------------
+// SOCKET.IO INTEGRATION
+// --------------------
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  }
+});
+
+// Socket.IO Authentication (JWT-based)
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error('Authentication token missing'));
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) return next(new Error('User not found'));
+
+    socket.user = user;
+    next();
+  } catch (err) {
+    return next(new Error('Invalid token'));
+  }
+});
+
+// Socket.IO Events
+io.on('connection', (socket) => {
+  const userId = socket.user._id.toString();
+  socket.join(userId);
+  console.log(`✅ Socket connected: ${socket.id} (user: ${userId})`);
+
+  socket.on('sendMessage', ({ to, message }) => {
+    io.to(to).emit('receiveMessage', {
+      from: userId,
+      message,
+      timestamp: new Date(),
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`❌ User disconnected: ${socket.id}`);
+  });
+});
+
+// --------------------
+// START SERVER
+// --------------------
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
