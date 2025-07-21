@@ -34,6 +34,8 @@ app.use(passport.session());
 
 // Express Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+// At the top with other imports
+app.use('/api/posts', require('./routes/postRoutes'));
 
 // Google OAuth Routes
 app.get('/auth/google',

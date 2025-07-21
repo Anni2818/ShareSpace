@@ -1,128 +1,3 @@
-// const User = require('../models/User');
-// const bcrypt = require('bcryptjs');
-// const jwt = require('jsonwebtoken');
-
-// // Register a new user
-// exports.register = async (req, res) => {
-//   try {
-//     const { name, email, password, role, hobbies, preferences, aadharCardUrl } = req.body;
-
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({ message: 'Email already in use' });
-//     }
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     const newUser = new User({
-//       name,
-//       email,
-//       password: hashedPassword,
-//       role,
-//       hobbies,
-//       preferences,
-//       aadharCardUrl,
-//       isVerified: !!aadharCardUrl,
-//     });
-
-//     const user = await newUser.save();
-
-//     res.status(201).json({
-//       message: 'User registered successfully',
-//       userId: user._id,
-//     });
-//   } catch (err) {
-//     console.error('Register Error:', err);
-//     res.status(500).json({ message: 'Server error during registration' });
-//   }
-// };
-
-// // Login user
-// exports.login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
-
-//     const token = jwt.sign(
-//       { userId: user._id, role: user.role },
-//       process.env.JWT_SECRET,
-//       { expiresIn: '7d' }
-//     );
-
-//     res.json({
-//       token,
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         role: user.role,
-//         isVerified: user.isVerified,
-//         hobbies: user.hobbies,
-//         preferences: user.preferences,
-//         aadharCardUrl: user.aadharCardUrl,
-//       },
-//     });
-//   } catch (err) {
-//     console.error('Login Error:', err);
-//     res.status(500).json({ message: 'Server error during login' });
-//   }
-// };
-
-// // Get user profile
-// exports.getProfile = async (req, res) => {
-//   try {
-//     const user = await User.findById(req.user.userId).select('-password');
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-//     res.json(user);
-//   } catch (err) {
-//     console.error('Profile Fetch Error:', err);
-//     res.status(500).json({ message: 'Error fetching profile' });
-//   }
-// };
-// // Update user profile
-// exports.updateProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.userId;
-//     const {
-//       name,
-//       hobbies,
-//       preferences,
-//       aadharCardUrl,
-//     } = req.body;
-
-//     const updateData = {
-//       name,
-//       hobbies,
-//       preferences,
-//     };
-
-//     // If Aadhar was newly uploaded, mark verified
-//     if (aadharCardUrl) {
-//       updateData.aadharCardUrl = aadharCardUrl;
-//       updateData.isVerified = true;
-//     }
-
-//     const updatedUser = await User.findByIdAndUpdate(
-//       userId,
-//       { $set: updateData },
-//       { new: true, runValidators: true }
-//     ).select('-password');
-
-//     res.json({
-//       message: 'Profile updated successfully',
-//       user: updatedUser,
-//     });
-//   } catch (err) {
-//     console.error('Update Profile Error:', err);
-//     res.status(500).json({ message: 'Failed to update profile' });
-//   }
-// };
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -131,28 +6,39 @@ const sendEmail = require('../utils/sendEmail');
 // REGISTER
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, hobbies, preferences, aadharCardUrl } = req.body;
+    const {
+      name, email, password, role,
+      hobbies, preferences, aadharCardUrl,
+      profilePic, bio, phoneNumber, location
+    } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'Email already in use' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = new User({
-      name, email, password: hashedPassword, role, hobbies, preferences, aadharCardUrl,
+      name,
+      email,
+      password, // password is hashed in pre-save middleware
+      role,
+      hobbies,
+      preferences,
+      aadharCardUrl,
+      profilePic,
+      bio,
+      phoneNumber,
+      location,
       isVerified: false,
     });
 
     const savedUser = await newUser.save();
 
-    // Send email verification token
     const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const url = `${process.env.CLIENT_URL}/verify-email/${token}`;
-    await sendEmail(savedUser.email, 'Verify your email', `Click to verify: ${url}`);
+    await sendEmail(savedUser.email, 'Verify your email', `Click to verify your account: ${url}`);
 
-    res.status(201).json({ message: 'Registered successfully. Check email to verify.' });
+    res.status(201).json({ message: 'Registered successfully. Check your email to verify.' });
   } catch (err) {
-    console.error(err);
+    console.error('Registration Error:', err);
     res.status(500).json({ message: 'Registration failed' });
   }
 };
@@ -167,9 +53,10 @@ exports.verifyEmail = async (req, res) => {
 
     user.isVerified = true;
     await user.save();
+
     res.json({ message: 'Email verified successfully' });
   } catch (err) {
-    res.status(400).json({ message: 'Invalid or expired verification token' });
+    res.status(400).json({ message: 'Invalid or expired token' });
   }
 };
 
@@ -184,16 +71,25 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-    if (!user.isVerified) return res.status(403).json({ message: 'Email not verified' });
+    if (!user.isVerified) return res.status(403).json({ message: 'Please verify your email first.' });
 
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
       token,
       user: {
-        _id: user._id, name: user.name, email: user.email, role: user.role,
-        isVerified: user.isVerified, hobbies: user.hobbies, preferences: user.preferences,
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+        hobbies: user.hobbies,
+        preferences: user.preferences,
         aadharCardUrl: user.aadharCardUrl,
+        profilePic: user.profilePic,
+        bio: user.bio,
+        phoneNumber: user.phoneNumber,
+        location: user.location,
       },
     });
   } catch (err) {
@@ -236,29 +132,27 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// GET /me - Get Logged In User Profile
+// GET /me - Get profile of logged in user
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     res.json(user);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Failed to fetch profile' });
   }
 };
 
-// PUT /me - Update Logged In User Profile
+// PUT /me - Update logged in user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const updated = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { $set: req.body },
       { new: true }
     ).select('-password');
 
-    res.json(updated);
+    res.json(updatedUser);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Failed to update profile' });
   }
 };
