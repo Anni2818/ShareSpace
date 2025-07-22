@@ -51,7 +51,7 @@ const CreatePost = () => {
         },
       });
 
-      navigate(`/post/${data._id}`);
+      navigate(`/posts/${data._id}`);
     } catch (err) {
       console.error('Post creation failed:', err?.response?.data || err);
       alert('Failed to create post. Please try again.');
