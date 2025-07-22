@@ -10,7 +10,7 @@ const jwt = require('jsonwebtoken');
 const connectDB = require('./config/db');
 const User = require('./models/User');
 
-require('./config/passport'); // Google OAuth setup
+//require('./config/passport'); // Google OAuth setup
 
 const app = express();
 connectDB();
@@ -40,17 +40,17 @@ const adminRoutes = require('./routes/admin');
 app.use('/api/admin', adminRoutes);
 
 // Google OAuth
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+// app.get('/auth/google',
+//   passport.authenticate('google', { scope: ['profile', 'email'] })
+// );
 
-app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
-    const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.redirect(`${process.env.CLIENT_URL}/oauth-success?token=${token}`);
-  }
-);
+// app.get('/auth/google/callback',
+//   passport.authenticate('google', { failureRedirect: '/' }),
+//   (req, res) => {
+//     const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+//     res.redirect(`${process.env.CLIENT_URL}/oauth-success?token=${token}`);
+//   }
+// );
 
 // ---------------------------------------------
 // SOCKET.IO LOGIC — only after request is accepted
