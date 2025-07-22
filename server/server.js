@@ -36,6 +36,8 @@ app.use('/api/requests', require('./routes/requestRoutes'));
 app.use('/api/matches', require('./routes/matchRotes'));
 app.use('/api/chat', require('./routes/chatRoomRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
 
 // Google OAuth
 app.get('/auth/google',
