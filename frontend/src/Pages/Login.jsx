@@ -17,8 +17,7 @@ const Login = ({ setLoggedIn }) => {
 
     try {
       const response = await axios.post(
-  `${import.meta.env.VITE_API_URL}/auth/login`, // ✅ if VITE_API_URL=http://localhost:5000/api
-
+        `${import.meta.env.VITE_API_URL}/api/auth/login`, // ✅ Correct endpoint
         formData,
         {
           headers: { 'Content-Type': 'application/json' },

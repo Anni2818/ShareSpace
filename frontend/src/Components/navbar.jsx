@@ -6,12 +6,14 @@ const Navbar = ({ loggedIn, setLoggedIn }) => {
   const [userName, setUserName] = useState('');
   const navigate = useNavigate();
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  const toggleMenu = () => setIsOpen(prev => !prev);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user'));
     if (userData?.name) {
       setUserName(userData.name);
+    } else {
+      setUserName('');
     }
   }, [loggedIn]);
 
@@ -19,6 +21,7 @@ const Navbar = ({ loggedIn, setLoggedIn }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setLoggedIn(false);
+    setUserName('');
     navigate('/login');
   };
 
@@ -29,11 +32,15 @@ const Navbar = ({ loggedIn, setLoggedIn }) => {
           ShareSpace
         </Link>
 
-        <button className="md:hidden text-2xl text-gray-700 focus:outline-none" onClick={toggleMenu}>
+        <button
+          className="md:hidden text-2xl text-gray-700 focus:outline-none"
+          onClick={toggleMenu}
+          aria-label="Toggle Menu"
+        >
           {isOpen ? '×' : '☰'}
         </button>
 
-        <div className={`md:flex items-center space-x-6 text-gray-700 font-medium ${isOpen ? 'block mt-4 md:mt-0' : 'hidden'} md:block`}>
+        <div className={`flex-col md:flex-row md:flex items-center space-y-4 md:space-y-0 md:space-x-6 text-gray-700 font-medium ${isOpen ? 'flex mt-4' : 'hidden md:flex'}`}>
           <Link to="/" className="hover:text-indigo-500 transition block md:inline">Home</Link>
           <Link to="/about" className="hover:text-indigo-500 transition block md:inline">About Us</Link>
 
