@@ -7,7 +7,7 @@ const sendEmail = require('../utils/sendEmail');
 exports.register = async (req, res) => {
   try {
     const {
-      name, email, password, role,
+      name, email, password, roles,
       hobbies, preferences, aadharCardUrl,
       profilePic, bio, phoneNumber, location
     } = req.body;
@@ -19,7 +19,7 @@ exports.register = async (req, res) => {
       name,
       email,
       password, // password is hashed in pre-save middleware
-      role,
+      roles: roles || ['seeker', 'poster'], // default both roles if not passed
       hobbies,
       preferences,
       aadharCardUrl,
@@ -61,6 +61,7 @@ exports.verifyEmail = async (req, res) => {
 };
 
 // LOGIN
+// LOGIN
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -71,17 +72,23 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-    if (!user.isVerified) return res.status(403).json({ message: 'Please verify your email first.' });
+    // REMOVE email verification check
+    // if (!user.isVerified) return res.status(403).json({ message: 'Please verify your email first.' });
 
-    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { userId: user._id, roles: user.roles },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     res.json({
+      success: true,
       token,
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        roles: user.roles,
         isVerified: user.isVerified,
         hobbies: user.hobbies,
         preferences: user.preferences,
@@ -96,6 +103,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Login failed' });
   }
 };
+
 
 // FORGOT PASSWORD
 exports.forgotPassword = async (req, res) => {

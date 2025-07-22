@@ -40,13 +40,23 @@ exports.getAllPosts = async (req, res) => {
 // @desc    Get a single post by ID
 exports.getPostById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate('user', 'name profilePic');
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    const post = await Post.findById(req.params.id)
+      .populate('user') // populate full user details
+      // .populate('requests') // uncomment if you store request ObjectIds in post
+      // .populate('matches')  // uncomment if you store match ObjectIds in post
+      .exec();
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
     res.json(post);
   } catch (err) {
+    console.error('Error fetching post by ID:', err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // @desc    Update a post (only owner can update)
 exports.updatePost = async (req, res) => {
