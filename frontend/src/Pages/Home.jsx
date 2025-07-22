@@ -11,11 +11,11 @@ import Navbar from '../Components/navbar';
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="bg-gray-50 text-gray-800 min-h-screen">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 text-white py-32 px-6 text-center mt-16">
+      <section className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 text-white py-36 px-6 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
             ShareSpace – Find Your Ideal Roommate
@@ -32,7 +32,7 @@ const Home = () => {
             </Link>
             <Link
               to="/post"
-              className="w-48 text-center bg-transparent border-2 border-white text-white font-semibold px-6 py-3 rounded-lg hover:bg-white hover:text-indigo-600 transition duration-300"
+              className="w-48 text-center border-2 border-white text-white font-semibold px-6 py-3 rounded-lg hover:bg-white hover:text-indigo-600 transition duration-300"
             >
               Post for Roommate
             </Link>
