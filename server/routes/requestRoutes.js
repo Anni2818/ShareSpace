@@ -4,7 +4,8 @@ const {
   acceptRequest,
   rejectRequest,
   getRequestsForPost,
-  getMyRequests
+  getMyRequests,
+  getRequestStatus,
 } = require('../controllers/requestController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -16,7 +17,7 @@ router.post('/:postId', protect, createRequest);
 // Accept or reject a request (poster only)
 router.patch('/:requestId/accept', protect, acceptRequest);
 router.patch('/:requestId/reject', protect, rejectRequest);
-
+router.get('/status/:postId', protect, getRequestStatus); 
 // Poster gets all requests for their post
 router.get('/post/:postId', protect, getRequestsForPost);
 

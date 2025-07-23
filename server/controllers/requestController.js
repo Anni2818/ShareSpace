@@ -7,6 +7,7 @@ const ChatRoom = require('../models/ChatRoom');
 exports.createRequest = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
+
     if (!post || !post.isAvailable) {
       return res.status(404).json({ message: 'Post not found or unavailable' });
     }
@@ -15,16 +16,23 @@ exports.createRequest = async (req, res) => {
       return res.status(400).json({ message: 'You cannot request your own post' });
     }
 
-    const request = await Request.create({
+    // Check if already requested
+    const alreadyRequested = await Request.findOne({
+      seeker: req.user._id,
       post: post._id,
-      seeker: req.user._id
     });
 
-    res.status(201).json(request);
-  } catch (err) {
-    if (err.code === 11000) {
+    if (alreadyRequested) {
       return res.status(400).json({ message: 'Request already sent for this post' });
     }
+
+    const request = await Request.create({
+      post: post._id,
+      seeker: req.user._id,
+    });
+
+    res.status(201).json({ message: 'Request sent successfully', status: 'pending', request });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
@@ -33,7 +41,10 @@ exports.createRequest = async (req, res) => {
 // @route   PATCH /api/requests/:requestId/accept
 exports.acceptRequest = async (req, res) => {
   try {
-    const request = await Request.findById(req.params.requestId).populate('post');
+    const request = await Request.findById(req.params.requestId)
+      .populate('post')
+      .populate('seeker', '-password -__v'); // Populate seeker with all details
+
     if (!request) return res.status(404).json({ message: 'Request not found' });
 
     if (request.post.user.toString() !== req.user._id.toString()) {
@@ -46,21 +57,35 @@ exports.acceptRequest = async (req, res) => {
     // Create chat room if not exists
     const existingRoom = await ChatRoom.findOne({
       participants: { $all: [req.user._id, request.seeker] },
-      post: request.post._id
+      post: request.post._id,
     });
 
     if (!existingRoom) {
       await ChatRoom.create({
         participants: [req.user._id, request.seeker],
-        post: request.post._id
+        post: request.post._id,
       });
     }
 
-    res.json({ message: 'Request accepted and chat room created' });
+    console.log('Seeker Details:', request.seeker); // Debug log to verify
+
+    res.json({
+      message: 'Request accepted and chat room created',
+      seeker: {
+        _id: request.seeker._id,
+        name: request.seeker.name,
+        email: request.seeker.email,
+        phoneNumber: request.seeker.phoneNumber,
+        bio: request.seeker.bio,
+        profilePic: request.seeker.profilePic,
+      },
+    });
   } catch (err) {
+    console.error('Accept Request Error:', err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // @desc    Poster rejects request
 // @route   PATCH /api/requests/:requestId/reject
@@ -111,6 +136,25 @@ exports.getMyRequests = async (req, res) => {
 
     res.json(requests);
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// @desc    Get current user's request status for a specific post
+// @route   GET /api/requests/status/:postId
+exports.getRequestStatus = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    const request = await Request.findOne({ post: postId, seeker: userId });
+
+    if (!request) {
+      return res.json({ status: null }); // no request yet
+    }
+
+    return res.json({ status: request.status }); // 'pending', 'accepted', or 'rejected'
+  } catch (err) {
+    console.error('Error fetching request status:', err);
     res.status(500).json({ message: err.message });
   }
 };

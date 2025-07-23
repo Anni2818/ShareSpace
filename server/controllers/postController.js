@@ -41,9 +41,7 @@ exports.getAllPosts = async (req, res) => {
 exports.getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('user') // populate full user details
-      // .populate('requests') // uncomment if you store request ObjectIds in post
-      // .populate('matches')  // uncomment if you store match ObjectIds in post
+      .populate('user', 'name email phoneNumber profilePic bio isVerified aadharCardUrl role') // Populate all relevant fields from User
       .exec();
 
     if (!post) {
@@ -94,11 +92,21 @@ exports.deletePost = async (req, res) => {
 };
 
 // @desc    Get all posts by current user
+// @desc    Get all posts by current user
+// @desc    Get all posts by current user with all details
+// @desc    Get all posts by current user with details
+// @desc    Get all posts by current user with populated user info
+// @route   GET /api/posts/myposts
+// @access  Private
 exports.getMyPosts = async (req, res) => {
   try {
-    const posts = await Post.find({ user: req.user._id });
-    res.json(posts);
+    const userId = req.user._id;
+
+    const posts = await Post.find({ user: userId }).populate('user', 'name email profilePic');
+
+    res.status(200).json(posts);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error fetching user posts:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
