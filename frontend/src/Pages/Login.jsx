@@ -8,7 +8,8 @@ const Login = ({ setLoggedIn }) => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -16,8 +17,8 @@ const Login = ({ setLoggedIn }) => {
     setError('');
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`, // ✅ Correct endpoint
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
         formData,
         {
           headers: { 'Content-Type': 'application/json' },
@@ -25,49 +26,84 @@ const Login = ({ setLoggedIn }) => {
         }
       );
 
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (res.data.success) {
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
         setLoggedIn(true);
         navigate('/');
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Login failed. Please try again.'
-      );
+      const message =
+        err.response?.data?.message || 'Login failed. Please try again.';
+      setError(message);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 border rounded-md shadow-md">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Login</h2>
-      {error && <p className="text-red-500 text-center">{error}</p>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 border rounded"
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-2 border rounded"
-        />
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
-        >
-          Login
-        </button>
-      </form>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          Sign In to Your Account
+        </h2>
+
+        {error && (
+          <div className="mb-4 text-red-600 text-sm text-center border border-red-200 bg-red-50 p-2 rounded">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              autoFocus
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-300"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-300"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 text-white font-medium py-2.5 rounded-md hover:bg-indigo-700 transition duration-200"
+          >
+            Login
+          </button>
+        </form>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Don’t have an account?{' '}
+          <span
+            className="text-indigo-600 hover:underline cursor-pointer"
+            onClick={() => navigate('/signup')}
+          >
+            Register here
+          </span>
+        </p>
+      </div>
     </div>
   );
 };

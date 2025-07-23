@@ -40,13 +40,20 @@ const Navbar = ({ loggedIn, setLoggedIn }) => {
           {isOpen ? '×' : '☰'}
         </button>
 
-        <div className={`flex-col md:flex-row md:flex items-center space-y-4 md:space-y-0 md:space-x-6 text-gray-700 font-medium ${isOpen ? 'flex mt-4' : 'hidden md:flex'}`}>
+        <div
+          className={`flex-col md:flex-row md:flex items-center space-y-4 md:space-y-0 md:space-x-6 text-gray-700 font-medium ${
+            isOpen ? 'flex mt-4' : 'hidden md:flex'
+          }`}
+        >
           <Link to="/" className="hover:text-indigo-500 transition block md:inline">Home</Link>
+          <Link to="/my-posts" className="hover:text-indigo-500 transition block md:inline">My Posts</Link>
+          {loggedIn && (
+            <Link to="/my-requests" className="hover:text-indigo-500 transition block md:inline">My Requests</Link>
+          )}
           <Link to="/about" className="hover:text-indigo-500 transition block md:inline">About Us</Link>
 
           {loggedIn ? (
             <>
-              <span className="text-indigo-600 font-semibold">Hi, {userName}</span>
               <Link to="/profile" className="hover:text-indigo-500 transition">Profile</Link>
               <button
                 onClick={handleLogout}
@@ -54,6 +61,7 @@ const Navbar = ({ loggedIn, setLoggedIn }) => {
               >
                 Logout
               </button>
+              <span className="text-indigo-600 font-semibold">Hi, {userName}</span>
             </>
           ) : (
             <>

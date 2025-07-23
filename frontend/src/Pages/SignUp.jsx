@@ -7,58 +7,68 @@ const SignUp = () => {
     name: '',
     email: '',
     password: '',
-    role: 'seeker',
+    role: [],
     phoneNumber: '',
-    location: '',
-    bio: '',
-    hobbies: '',
     profilePic: '',
+    bio: '',
     aadharCardUrl: '',
-    preferences: {
-      smoking: false,
-      pets: false,
-      nightOwl: false,
-      cleanlinessLevel: 3,
-    },
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (name in formData.preferences) {
-      setFormData((prev) => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          [name]: type === 'checkbox' ? checked : value,
-        },
-      }));
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    if (!formData.password) errors.password = 'Password is required';
+    else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+
+    if (!formData.role.length) {
+      errors.role = 'Select at least one role';
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      const validRoles = ['seeker', 'poster'];
+      const isValid = formData.role.every((r) => validRoles.includes(r));
+      if (!isValid) errors.role = 'Only seeker, poster, or both are allowed';
     }
+
+    return errors;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'role') {
+      const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
+      setFormData((prev) => ({ ...prev, role: selected }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    setValidationErrors((prev) => ({ ...prev, [name]: '' }));
+    setError('');
+    setSuccess('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setSuccess('');
+    const errors = validateForm();
+    setValidationErrors(errors);
 
-    const payload = {
-      ...formData,
-      roles: [formData.role],
-      hobbies: formData.hobbies.split(',').map((h) => h.trim()),
-    };
+    if (Object.keys(errors).length > 0) return;
+
+    setLoading(true);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, payload);
-      alert(res.data.message || 'Registered! Please verify your email.');
-      navigate('/login');
+      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, formData);
+      setSuccess(data.message || 'Registered successfully! Please verify your email.');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -68,99 +78,106 @@ const SignUp = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-blue-200 px-4 py-10">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl p-10">
-        <h2 className="text-4xl font-bold text-center text-indigo-700 mb-8">Create Your Account</h2>
+      <div className="bg-white shadow-xl rounded-2xl w-full max-w-3xl p-10">
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-indigo-700 mb-6">
+          Sign Up for ShareSpace
+        </h2>
 
-        {error && <div className="text-red-600 text-center mb-4">{error}</div>}
+        {error && <div className="text-red-600 text-center font-medium mb-4">{error}</div>}
+        {success && <div className="text-green-600 text-center font-medium mb-4">{success}</div>}
 
-        <form onSubmit={handleSubmit} className="space-y-6 max-h-[75vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {[
               ['name', 'Full Name'],
               ['email', 'Email', 'email'],
               ['password', 'Password', 'password'],
-              ['phoneNumber', 'Phone Number'],
-              ['location', 'Location'],
-              ['profilePic', 'Profile Pic URL'],
-              ['aadharCardUrl', 'Aadhar Card URL'],
-            ].map(([name, placeholder, type = 'text']) => (
-              <input
-                key={name}
-                name={name}
-                type={type}
-                placeholder={placeholder}
-                value={formData[name]}
-                onChange={handleChange}
-                className="p-3 bg-gray-100 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                required={['email', 'password', 'name'].includes(name)}
-              />
+            ].map(([name, label, type = 'text']) => (
+              <div key={name}>
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+                  {label}
+                </label>
+                <input
+                  id={name}
+                  name={name}
+                  type={type}
+                  value={formData[name]}
+                  onChange={handleChange}
+                  className={`w-full p-3 border ${
+                    validationErrors[name] ? 'border-red-500' : 'border-gray-300'
+                  } rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  required
+                />
+                {validationErrors[name] && (
+                  <p className="text-sm text-red-500 mt-1">{validationErrors[name]}</p>
+                )}
+              </div>
             ))}
 
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="p-3 bg-gray-100 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="seeker">Seeker</option>
-              <option value="poster">Poster</option>
-              <option value="admin">Admin</option>
-            </select>
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Select Role(s)
+              </label>
+              <select
+                id="role"
+                name="role"
+                multiple
+                value={formData.role}
+                onChange={handleChange}
+                className={`w-full p-3 border ${
+                  validationErrors.role ? 'border-red-500' : 'border-gray-300'
+                } rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+              >
+                <option value="seeker">Seeker</option>
+                <option value="poster">Poster</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Hold Ctrl (Cmd) to select both</p>
+              {validationErrors.role && (
+                <p className="text-sm text-red-500 mt-1">{validationErrors.role}</p>
+              )}
+            </div>
+
+            {[
+              ['phoneNumber', 'Phone Number'],
+              ['profilePic', 'Profile Picture URL'],
+              ['aadharCardUrl', 'Aadhar Card URL'],
+            ].map(([name, label]) => (
+              <div key={name}>
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+                  {label} (Optional)
+                </label>
+                <input
+                  id={name}
+                  name={name}
+                  type="text"
+                  value={formData[name]}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            ))}
           </div>
 
-          <textarea
-            name="bio"
-            maxLength="500"
-            rows="3"
-            placeholder="Short Bio (max 500 chars)"
-            value={formData.bio}
-            onChange={handleChange}
-            className="w-full p-3 bg-gray-100 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-          />
-
-          <input
-            name="hobbies"
-            placeholder="Hobbies (comma separated)"
-            value={formData.hobbies}
-            onChange={handleChange}
-            className="w-full p-3 bg-gray-100 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-          />
-
           <div>
-            <label className="block font-semibold mb-2 text-gray-700">Preferences</label>
-            <div className="flex flex-wrap gap-4">
-              {['smoking', 'pets', 'nightOwl'].map((pref) => (
-                <label key={pref} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    name={pref}
-                    checked={formData.preferences[pref]}
-                    onChange={handleChange}
-                    className="accent-indigo-600"
-                  />
-                  {pref.charAt(0).toUpperCase() + pref.slice(1)}
-                </label>
-              ))}
-              <label className="flex items-center gap-3 text-sm">
-                Cleanliness
-                <input
-                  type="range"
-                  name="cleanlinessLevel"
-                  min="1"
-                  max="5"
-                  value={formData.preferences.cleanlinessLevel}
-                  onChange={handleChange}
-                  className="accent-indigo-600"
-                />
-                {formData.preferences.cleanlinessLevel}
-              </label>
-            </div>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
+              Short Bio (Optional)
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              rows="3"
+              maxLength={500}
+              value={formData.bio}
+              onChange={handleChange}
+              placeholder="Tell us about yourself"
+              className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium text-lg shadow-md transition duration-200"
           >
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>

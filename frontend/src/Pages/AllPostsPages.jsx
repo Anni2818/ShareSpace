@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import PostCard from '../Components/PostCard';
 
+// Hook to get query params from URL
 const useQuery = () => {
   return new URLSearchParams(useLocation().search);
 };
@@ -20,18 +21,19 @@ const AllPostsPage = () => {
           params[key] = value;
         }
 
-        const { data } = await axios.get('/api/posts', { params });
+        const { data } = await axios.get('http://localhost:5000/api/posts', { params });
 
-        // ✅ Flexible handling of both response formats
-        if (Array.isArray(data)) {
-          setPosts(data);
-        } else if (data?.posts && Array.isArray(data.posts)) {
-          setPosts(data.posts);
-        } else {
-          throw new Error('Invalid data format received');
-        }
-      } catch (error) {
-        console.error('Error fetching posts:', error.message);
+        let allPosts = Array.isArray(data) ? data : data?.posts || [];
+
+        const user = JSON.parse(localStorage.getItem('user'));
+        const userId = user?._id;
+
+        // Filter out posts created by the logged-in user
+        const filteredPosts = allPosts.filter((post) => post?.user?._id !== userId);
+
+        setPosts(filteredPosts);
+      } catch (err) {
+        console.error('Error fetching posts:', err.message);
         setError('Failed to load posts.');
       }
     };
